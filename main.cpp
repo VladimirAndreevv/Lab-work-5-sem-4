@@ -10,7 +10,52 @@ enum class CheeseFreshness : int
 	normal,
 	old,
 	Unknown
+
 };
+/////////////////////////////////////Лабораторная работа № 5 (паттерны проектирования, часть 3)/////////////////////////////////////
+enum class WayOfEatingCheese : int
+{
+	WithASandwich,
+	InASalad,
+	Slice,
+
+	None
+};
+
+class EatingStrategy
+{
+public:
+	virtual ~EatingStrategy() {}
+	virtual void Eat() = 0;
+};
+
+class SandwichEatingStrategy : public EatingStrategy
+{
+	void Eat() { cout << "съем сыр на бутерброде"; }
+};
+
+class  InASaladEatingStrategy : public EatingStrategy
+{
+	void Eat() { cout << "съем сыр в салате"; }
+};
+
+class  SliceEatingStrategy : public EatingStrategy
+{
+	void Eat() { cout << "съем ломнит сыра"; }
+};
+
+EatingStrategy* CreateEatingStrategy(WayOfEatingCheese absorptionMethod)
+{
+	switch (absorptionMethod)
+	{
+	case WayOfEatingCheese::WithASandwich: return new SandwichEatingStrategy;
+	case WayOfEatingCheese::InASalad:return new InASaladEatingStrategy;
+	case WayOfEatingCheese::Slice: return new SliceEatingStrategy;
+	default: return nullptr;
+	}
+}
+
+
 
 class Cheese
 {
@@ -18,6 +63,31 @@ private:
 	CheeseFreshness Freshness;
 	double Weight;
 	int Price;
+	EatingStrategy* AbsorptionMethod;
+	void AcquisitionStrategy()
+	{
+		if (AbsorptionMethod == nullptr)
+		{
+			cout << "Викинул сыр";
+			return;
+		}
+		else
+		{
+			AbsorptionMethod->Eat();
+		}
+	}
+
+	void FreshnessCheese()
+	{
+		if (GetFreshness()== CheeseFreshness::fresh || GetFreshness() == CheeseFreshness::normal)
+		{
+			cout << "свежий";
+		}
+		else
+		{
+			cout << "не свежий";
+		}
+	}
 protected:
 	bool Mold;
 	string Hardness;
@@ -62,10 +132,24 @@ public:
 		{
 			return "Сыр без плесени";
 		}
+
+
 	}
-
+	virtual void Name() = 0;
+	virtual void Сooking() = 0;
+	void Eat()
+	{
+		Name();
+		cout << " ";
+		FreshnessCheese();
+		cout << " ";
+		Сooking();
+		cout << " ";
+		AcquisitionStrategy();
+		cout << endl;
+	}
 	CheeseFreshness GetFreshness() const { return Freshness; }
-
+	void SetEatingManner(EatingStrategy* eatingManner) { AbsorptionMethod = eatingManner; }
 };
 Cheese::Cheese(CheeseFreshness Freshness, double Weight, int Price, string Hardness, bool Mold) : Freshness(Freshness), Weight(Weight), Price(Price), Hardness(Hardness), Mold(Mold)
 {
@@ -89,9 +173,12 @@ public:
 	{
 		Hardness = Vname;
 	}
+	void Name() { cout << "Чеддр"; }
+	void Сooking() { cout << "Просто достать с упаковки"; }
 };
 Chedder::Chedder(double Weight, int Price, string Hardness, bool Mold) : Cheese(CheeseFreshness::normal, 550, Price, Hardness, Mold)
 {
+	SetEatingManner(CreateEatingStrategy(WayOfEatingCheese::WithASandwich));
 	//cout << "создан наследник \"Чеддр\" " << endl;
 }
 Chedder::~Chedder()
@@ -105,9 +192,13 @@ public:
 	Camembert(double Weight, int Price, string Hardness);
 	~Camembert();
 	void Eat();
+	void Name() { cout << "Камамбер"; }
+	void Сooking() { cout << "подержать в тепле 10 минут"; }
+
 };
 Camembert::Camembert(double Weight, int Price, string Hardness) : Cheese(CheeseFreshness::old, 600, Price, Hardness, 1)
 {
+	SetEatingManner(CreateEatingStrategy(WayOfEatingCheese::InASalad));
 	//cout << "создан наследник \"камамбер\" " << endl;
 }
 Camembert::~Camembert()
@@ -116,7 +207,7 @@ Camembert::~Camembert()
 }
 void Camembert::Eat()
 {
-	wcout << L"eм камамбер..." << endl;
+	cout << "eм камамбер..." << endl;
 }
 
 class Roquefort : public Cheese
@@ -128,10 +219,12 @@ public:
 	{
 		Mold = VMold;
 	}
+	void Name() { cout << "Рокфор"; }
+	void Сooking() { cout << "подержать в холоде 20 минут"; }
 };
 Roquefort::Roquefort(double Weight, int Price, string Hardness, bool Mold) : Cheese(CheeseFreshness::normal, 420, Price, Hardness, Mold)
 {
-
+	SetEatingManner(CreateEatingStrategy(WayOfEatingCheese::Slice));
 	//cout << "создан наследник \"Рокфор\"" << endl;
 }
 Roquefort::~Roquefort()
@@ -171,7 +264,8 @@ void Create(Iterator<Cheese*>* it)
 	for (it->First(); !it->IsDone(); it->Next())
 	{
 		Cheese* currentCheese = it->GetCurrent();
-		wcout << "Мы создали " << currentCheese->GetHardness() << endl;
+		cout << "Мы создали ";
+		currentCheese->Eat();
 	}
 }
 
@@ -260,6 +354,7 @@ public:
 };
 
 
+
 int main()
 {
 	setlocale(LC_ALL, "rus");
@@ -298,7 +393,7 @@ int main()
 	cout << "Мы создали " << newCheese->GetHardness() << endl << endl;
 	delete newCheese;*/
 
-	wcout << L"контейнер на статических массивов" << endl;
+	cout << "контейнер на статических массивов" << endl;
 	ArrayClass<Cheese*> CheeseArray;
 	for (size_t i = 0; i < 15; i++)
 	{
@@ -308,10 +403,10 @@ int main()
 		Cheese* newCheese = CreateCheese(Cheese_type);
 		CheeseArray.Add(newCheese);
 	}
-	wcout << L"Вывод через итератор" << endl;
+	cout << "Вывод через итератор" << endl;
 	Create(CheeseArray.GetIterator());
 
-	wcout << endl << endl << L"контейнер на Vector" << endl;
+	cout << endl << endl << "контейнер на Vector" << endl;
 	VectorClass<Cheese*> CheeseVector;
 	for (size_t i = 0; i < 15; i++)
 	{
@@ -321,22 +416,22 @@ int main()
 		Cheese* newCheese = CreateCheese(Cheese_type);
 		CheeseVector.PishBack(newCheese);
 	}
-	wcout << L"Вывод через итератор" << endl;
+	cout << "Вывод через итератор" << endl;
 	Create(CheeseVector.GetIterator());
 
 	cout << endl << endl;
-	wcout << endl << L"Вывести сыр по свежести" << endl;
+	cout << endl << "Вывести сыр по свежести" << endl;
 	Iterator<Cheese*>* It = new CheeseFreshnessDecorator(CheeseArray.GetIterator(), CheeseFreshness::normal);
 	Create(It);
 	delete It;
 
-	wcout << endl << L"Вывести сыр с преленью" << endl;
+	cout << endl << "Вывести сыр с преленью" << endl;
 	Iterator<Cheese*>* It2 = new CheeseMoldDecorator(CheeseArray.GetIterator(), "Сыр с плесенью");
 	Create(It2);
 	delete It2;
 
 
-	wcout << endl << L"Вывести сыр по тяжести" << endl;
+	cout << endl << "Вывести сыр по тяжести" << endl;
 	Iterator<Cheese*>* It3 = new CheeseHeavyDecorator(CheeseArray.GetIterator(), "я тяжелый СЫР!!!");
 	Create(It3);
 	delete It3;
@@ -350,7 +445,7 @@ int main()
 		Cheese* newCheese = CreateCheese(typeCheese);
 		cheeseVector.push_back(newCheese);
 	}
-	wcout << endl << L"Демонстация Адаптера" << endl;
+	cout << endl << "Демонстация Адаптера" << endl;
 	Iterator<Cheese*>* adaptedIt = new IteratorAdapter<std::list<Cheese*>, Cheese*>(&cheeseVector);
 	Iterator<Cheese*>* adaptedFreshnessHeavyIt = new CheeseHeavyDecorator(new CheeseFreshnessDecorator(adaptedIt, CheeseFreshness::normal), "я тяжелый СЫР!!!");
 	Create(adaptedFreshnessHeavyIt);
